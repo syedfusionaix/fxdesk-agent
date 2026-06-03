@@ -32,8 +32,10 @@ raises an incident when escalation is needed — routing it to the right backend
 One conversation, the correct system of record behind each issue.
 
 ### 2. Create a service request
-The employee asks for software, access, or hardware. fxDesk logs a structured service
-request on their behalf via the **Model Context Protocol (MCP)** — no portal, no form.
+The employee asks for software, access, or hardware. The Service Request Agent logs a
+structured service request on their behalf using the **out-of-the-box Dataverse MCP server**
+(added as a tool on the connected agent), which creates the request as a record in
+**Dataverse** — no portal, no form.
 
 ### 3. View my tickets (unified)
 The employee asks for status. fxDesk retrieves their incidents and service requests from
@@ -73,7 +75,8 @@ interprets each request and routes it to the right connected agent.
 - **Incident Agent** — troubleshoots from a knowledge base, creates and escalates incidents
   to ServiceNow/Pega, and powers the My Tickets unified view. Renders results as dynamic
   Adaptive Cards.
-- **Service Request Agent** — creates structured service-request objects via MCP.
+- **Service Request Agent** — creates structured service-request records in Dataverse using
+  the out-of-the-box Dataverse MCP server, added as a tool on the connected agent.
 
 **Dynamic Adaptive Card engine:** an Azure Function reads ServiceNow/Pega UI metadata and
 transforms it into Adaptive Card schema at runtime.
@@ -81,9 +84,10 @@ transforms it into Adaptive Card schema at runtime.
 **Backend systems of record:** ServiceNow and Pega (incidents and requests).
 
 **Data flow:**
-`Employee (Teams) → fxDesk orchestrator (Copilot Studio) → connected agent (Incident or
-Service Request) → ServiceNow / Pega, with the Azure Function rendering dynamic Adaptive
-Cards from backend UI metadata.`
+`Employee (Teams) → fxDesk orchestrator (Copilot Studio) → connected agent. Incidents go to
+ServiceNow / Pega via the Incident Agent (with the Azure Function rendering dynamic Adaptive
+Cards from backend UI metadata); service requests go to Dataverse via the Service Request
+Agent using the Dataverse MCP server.`
 
 ---
 
@@ -91,10 +95,11 @@ Cards from backend UI metadata.`
 
 - **Microsoft Copilot Studio** — orchestrator + connected agents, generative orchestration
 - **Connected agents** — multi-agent design (Incident Agent, Service Request Agent)
-- **Model Context Protocol (MCP)** — reliable structured-object writes for service requests
+- **Model Context Protocol (MCP)** — the out-of-the-box Dataverse MCP server, used by the Service Request Agent to create request records in Dataverse
 - **Azure Functions** — metadata-driven dynamic Adaptive Card generation
-- **ServiceNow** — incidents and requests (system of record)
-- **Pega** — incidents and requests (system of record)
+- **ServiceNow** — incidents (system of record)
+- **Pega** — incidents (system of record)
+- **Microsoft Dataverse** — stores service requests (written via the Dataverse MCP server)
 - **Microsoft Teams** — deployment channel
 - **Adaptive Cards** — rich, interactive responses rendered dynamically
 
@@ -104,10 +109,10 @@ Cards from backend UI metadata.`
 
 - **Multi-agent orchestration** — a generative orchestrator routing to specialist connected agents
 - **Connected agents** — Incident Agent and Service Request Agent as independent, composable agents
-- **Model Context Protocol (MCP)** — used by the Service Request Agent for reliable structured writes
+- **Model Context Protocol (MCP)** — the out-of-the-box Dataverse MCP server, added as a tool on the connected Service Request Agent, creates request records in Dataverse
 - **Knowledge-grounded troubleshooting** — the Incident Agent answers from a knowledge base
-- **External system integration** — ServiceNow and Pega via connectors and an Azure Function
-- **Dynamic Adaptive Cards** — metadata-driven UI generated at runtime
+- **External system integration** — incidents integrated with ServiceNow and Pega via connectors and an Azure Function; service requests persisted in Dataverse
+- **Dynamic Adaptive Cards** — metadata-driven UI generated at runtime from ServiceNow/Pega
 - **Publishing to Microsoft Teams**
 
 *(Module names will be aligned to the exact Operative curriculum lessons.)*
