@@ -60,6 +60,10 @@ stays in sync with it on its own.
 
 This applies to both the incident cards and the My Tickets view.
 
+> **Demo hosting note:** the function is designed as an Azure Function. For this demo it is
+> run locally and exposed via an ngrok tunnel rather than deployed to an Azure subscription
+> — no paid Azure resources are needed to reproduce the demo. The design is unchanged.
+
 ---
 
 ## Architecture
@@ -135,8 +139,10 @@ Agent using the Dataverse MCP server.`
 
 1. **Import the solution:** in the Power Platform maker portal (make.powerapps.com) →
    Solutions → Import solution → select the .zip in `solution/`.
-2. **Deploy the Azure Function:** deploy the function in `azure-function/` to your Azure
-   subscription; note its endpoint URL.
+2. **Deploy the function:** the dynamic Adaptive Card function is designed as an Azure
+   Function. Deploy it to your Azure subscription and note its endpoint URL — or, for a
+   quick demo without Azure, run it locally and expose it via an ngrok tunnel (as used in
+   this project's demo).
 3. **Configure connections / variables:** after import, set the connection references and
    any environment variables — ServiceNow, Pega, the Azure Function endpoint, and the MCP
    connection (and Outlook if used). Reconnect/authenticate each connector.
