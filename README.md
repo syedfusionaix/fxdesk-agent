@@ -3,7 +3,8 @@
 An AI-powered, multi-agent assistant built in **Microsoft Copilot Studio** that gives an
 entire enterprise a single conversational front door for service management. Employees
 describe what they need in plain language; fxDesk routes each request to the right
-specialist agent and handles it across multiple backend systems — **ServiceNow and Pega**.
+specialist agent and handles it across multiple backend systems — **ServiceNow, Pega, and
+Microsoft Dataverse**.
 
 Built for the **Microsoft Agent Academy Hackathon (Operative track)**.
 
@@ -12,12 +13,13 @@ Built for the **Microsoft Agent Academy Hackathon (Operative track)**.
 ## The Problem
 
 Across an enterprise, service management is fragmented. IT, HR, and facilities each use
-different systems and portals, and employees must know which tool and form to use for every
-request or issue. It's slow, manual, and inconsistent — incidents live in one system,
-service requests in another, with no single view and no unified way to ask for help.
+different systems and portals (ServiceNow, Pega, and more), and employees must know which
+tool and form to use for every issue or request. Incidents live in one system, service
+requests in another, with no single view and slow, manual triage.
 
-**Target users:** any employee who needs to raise an issue, request something, or check the
-status of their tickets — without needing to know which system or form to use.
+**Target users:** employees across the enterprise who need to raise an issue, request
+something, or check the status of an existing ticket — without needing to know which system
+or form to use.
 
 ---
 
@@ -46,19 +48,21 @@ The employee asks for status. fxDesk retrieves their incidents and service reque
 ## What Makes It Different — Dynamic, Metadata-Driven Adaptive Cards
 
 fxDesk's Adaptive Cards are **not hardcoded**. An **Azure Function** sits between the agent
-and the backend systems:
+and the backend systems and builds each card at runtime from the backend's own UI metadata:
 
-1. It calls ServiceNow or Pega and reads that system's **live UI metadata** (its form and
-   field definitions).
-2. It **transforms that metadata into Copilot Studio Adaptive Card schema** at runtime.
-3. The agent renders the resulting card.
+- **Pega:** the function calls **Pega's DX API**, which creates a case and returns its UI
+  metadata; the function transforms that metadata into Adaptive Card schema.
+- **ServiceNow:** the function calls the **ServiceNow Table API** to retrieve the incident
+  fields, selects the required (configurable) fields, and transforms them into Adaptive
+  Card schema.
+
+The function backs create, submit, and view operations across both systems.
 
 **The payoff:** any UI change made in ServiceNow or Pega — a new field, an updated form — is
 reflected in the agent's card **automatically**, with no manual card rebuilding and no
 developer rework. The backend system stays the single source of truth, and the agent's UI
-stays in sync with it on its own.
-
-This applies to both the incident cards and the My Tickets view.
+stays in sync with it on its own. This applies to both the incident cards and the My Tickets
+view.
 
 > **Demo hosting note:** the function is designed as an Azure Function. For this demo it is
 > run locally and exposed via an ngrok tunnel rather than deployed to an Azure subscription
@@ -83,9 +87,11 @@ interprets each request and routes it to the right connected agent.
   the out-of-the-box Dataverse MCP server, added as a tool on the connected agent.
 
 **Dynamic Adaptive Card engine:** an Azure Function reads ServiceNow/Pega UI metadata and
-transforms it into Adaptive Card schema at runtime.
+transforms it into Adaptive Card schema at runtime (Pega via DX API, ServiceNow via Table
+API), backing create, submit, and view operations.
 
-**Backend systems of record:** ServiceNow and Pega (incidents and requests).
+**Backend systems of record:** ServiceNow and Pega (incidents); Microsoft Dataverse
+(service requests, written via the Dataverse MCP server).
 
 **Data flow:**
 `Employee (Teams) → fxDesk orchestrator (Copilot Studio) → connected agent. Incidents go to
@@ -101,8 +107,8 @@ Agent using the Dataverse MCP server.`
 - **Connected agents** — multi-agent design (Incident Agent, Service Request Agent)
 - **Model Context Protocol (MCP)** — the out-of-the-box Dataverse MCP server, used by the Service Request Agent to create request records in Dataverse
 - **Azure Functions** — metadata-driven dynamic Adaptive Card generation
-- **ServiceNow** — incidents (system of record)
-- **Pega** — incidents (system of record)
+- **ServiceNow** — incidents (Table API)
+- **Pega** — incidents (DX API)
 - **Microsoft Dataverse** — stores service requests (written via the Dataverse MCP server)
 - **Microsoft Teams** — deployment channel
 - **Adaptive Cards** — rich, interactive responses rendered dynamically
@@ -111,15 +117,11 @@ Agent using the Dataverse MCP server.`
 
 ## Agent Academy Concepts Applied (Operative track)
 
-- **Multi-agent orchestration** — a generative orchestrator routing to specialist connected agents
-- **Connected agents** — Incident Agent and Service Request Agent as independent, composable agents
-- **Model Context Protocol (MCP)** — the out-of-the-box Dataverse MCP server, added as a tool on the connected Service Request Agent, creates request records in Dataverse
-- **Knowledge-grounded troubleshooting** — the Incident Agent answers from a knowledge base
-- **External system integration** — incidents integrated with ServiceNow and Pega via connectors and an Azure Function; service requests persisted in Dataverse
-- **Dynamic Adaptive Cards** — metadata-driven UI generated at runtime from ServiceNow/Pega
+- **Authoring Agent Instructions (Mission 02)** — precise orchestrator and connected-agent instructions to control routing and behaviour (including result-display rules to avoid duplicate confirmations)
+- **Multi-agent ready with connected agents (Mission 03)** — a generative orchestrator coordinating an Incident Agent and a Service Request Agent
+- **Integrate with MCP Servers (Mission 10)** — the out-of-the-box Dataverse MCP server, added as a tool on the connected Service Request Agent, creates request records in Dataverse
+- **Obtain User Feedback with Adaptive Cards (Mission 11)** — Adaptive Cards for rich responses, extended into dynamic, metadata-driven cards generated at runtime from ServiceNow and Pega UI metadata
 - **Publishing to Microsoft Teams**
-
-*(Module names will be aligned to the exact Operative curriculum lessons.)*
 
 ---
 
@@ -128,38 +130,68 @@ Agent using the Dataverse MCP server.`
 | Path | Description |
 |---|---|
 | `solution/` | Exported Copilot Studio solution (.zip) — orchestrator, connected agents, and flows |
-| `azure-function/` | The Azure Function that reads ServiceNow/Pega UI metadata and builds Adaptive Card schema (source and/or description) |
+| `azure-function/` | Description of the Azure Function that reads ServiceNow/Pega UI metadata and builds Adaptive Card schema (design only — see "External Dependencies") |
 | `fxDesk_Architecture.png` | Solution architecture diagram |
 | `docs/` | Demo deck (optional) |
 | `screenshots/` | Screenshots of the agent in action (optional) |
 
 ---
 
+## External Dependencies (not included)
+
+fxDesk integrates with several external systems that are part of the running environment,
+not artifacts of this repository. The following are intentionally not included here, as they
+are either proprietary, environment-specific, or require their own licensed platforms:
+
+- **Azure Function source code** — the dynamic Adaptive Card engine. Its design and
+  behaviour are documented in `azure-function/README.md`, but the implementation is not
+  published.
+- **Pega application** — the Pega cases, classes, and DX API configuration live in a
+  licensed Pega environment and are not part of this repo.
+- **ServiceNow environment** — the ServiceNow instance, tables, and Table API configuration
+  are part of a licensed ServiceNow environment and are not included.
+
+To run fxDesk end to end, these dependencies must exist in your own environment, with their
+endpoints configured via the solution's environment variables (below). This repository
+contains the Copilot Studio solution (the orchestrator and connected agents) and full
+documentation of the architecture and integrations.
+
+---
+
 ## Setup / Import Notes
 
 1. **Import the solution:** in the Power Platform maker portal (make.powerapps.com) →
-   Solutions → Import solution → select the .zip in `solution/`.
-2. **Deploy the function:** the dynamic Adaptive Card function is designed as an Azure
-   Function. Deploy it to your Azure subscription and note its endpoint URL — or, for a
-   quick demo without Azure, run it locally and expose it via an ngrok tunnel (as used in
-   this project's demo).
-3. **Configure connections / variables:** after import, set the connection references and
-   any environment variables — ServiceNow, Pega, the Azure Function endpoint, and the MCP
-   connection (and Outlook if used). Reconnect/authenticate each connector.
-4. **Set up the knowledge base** for the Incident Agent's troubleshooting.
-5. **Publish** the agent to Microsoft Teams.
+   Solutions → Import solution → select the .zip in `solution/`. This includes the fxDesk
+   orchestrator and the connected Incident and Service Request agents.
 
-> Note: the Azure Function is a separate Azure resource and is not part of the Power
-> Platform solution. It is provided here under `azure-function/` and must be deployed
-> separately, with its endpoint configured in the agent's tool/connection.
+2. **Set up the dynamic Adaptive Card function:** the function that generates Adaptive Cards
+   from ServiceNow/Pega UI metadata is designed as an Azure Function. Deploy it to your Azure
+   subscription, or — for a quick demo without Azure — run it locally and expose it via an
+   ngrok tunnel (as used in this project's demo).
+
+3. **Set the environment variables:** provide the endpoint URLs for the dynamic-card function
+   operations, so they can be updated without changing the agent or flows:
+   - `CreatePegaCaseEndpointURL`, `SubmitPegaCaseEndpointURL`, `GetPegaTicketsEndpointURL`
+   - `CreateServiceNowIncidentEndpointURL`, `SubmitServiceNowIncidentEndpointURL`,
+     `GetServiceNowIncidentsEndpointURL`
+
+4. **Configure connections:** reconnect/authenticate the connectors and references —
+   ServiceNow, Pega, and the Dataverse MCP server.
+
+5. **Set up the knowledge base** used by the Incident Agent for troubleshooting, and confirm
+   the Dataverse table for service requests exists in the environment (the Service Request
+   Agent writes to it via the Dataverse MCP server).
+
+6. **Publish** the agent to Microsoft Teams.
 
 ---
 
 ## Demo
 
 A walkthrough video (≤ 5 minutes) demonstrates all three capabilities — incident creation
-across ServiceNow and Pega, a service request via MCP, and the unified My Tickets view —
-plus a **live demonstration** of the dynamic Adaptive Card: a new field added to a Pega
-process appears in the agent's card instantly, with no code change or redeployment.
+across ServiceNow and Pega, a service request via the Dataverse MCP server, and the unified
+My Tickets view — plus a **live demonstration** of the dynamic Adaptive Card: a new field
+added to a Pega process appears in the agent's card instantly, with no code change or
+redeployment.
 
 *Demo video: [link]*
