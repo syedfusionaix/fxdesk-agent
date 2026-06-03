@@ -194,4 +194,4 @@ My Tickets view — plus a **live demonstration** of the dynamic Adaptive Card: 
 added to a Pega process appears in the agent's card instantly, with no code change or
 redeployment.
 
-*Demo video: [link]*
+*Demo video: https://youtu.be/PUpcxh2FgMk *
